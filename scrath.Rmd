@@ -1,0 +1,117 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(jsonlite)
+library(tidyverse)
+```
+
+We have two data files one general countries.json and a bunch of *.visas.json.
+
+Process would be to 1. load the general one 2. load all the visas.json and join them.
+
+## countries.json
+
+Load the general countries.json
+
+```{r}
+countries <- fromJSON("data/countries.json", flatten = T)
+countries <- as_tibble(countries)
+countries
+```
+
+```{r}
+countries <- countries %>%
+  select(name.common, name.official, cca2, independent, status, currency, capital, region, subregion, demonym)
+countries
+```
+
+## *.visas.json
+
+### Single file
+
+```{r}
+item <- fromJSON("data/visas/ABKH.visas.json")
+tbl <- tibble(cca2 = item$cca2, requirements = list(item$requirements))
+tbl
+```
+
+```{r}
+a <- tbl %>% filter(cca2 == "AB")
+a$requirements[[1]]$AFGH
+```
+
+### All the files
+
+```{r}
+path <- "data/visas"
+filenames <- dir(path = path, pattern="*.json", full.names = TRUE)
+# filenames <- filenames[0:5]
+filenames[0:5]
+```
+
+```{r}
+visas <- filenames %>%
+    map_df(function(x) {
+      item <- fromJSON(x)
+      parent <- "parent" %in% names(item)
+      parent <- if (parent) item$parent else NA
+      tibble(cca2 = item$cca2, csvc = item$csvc, requirements = list(item$requirements), parent = parent)
+    })
+visas
+```
+
+```{r}
+co <- visas %>% filter(cca2 == "CO")
+co$requirements[[1]]$USOA
+```
+
+## Join data
+
+```{r}
+?left_join
+data <- left_join(countries, visas, by = "cca2")
+data
+```
+
+
+```{r}
+(data %>% filter(csvc == "AFGH"))$name.common
+```
+
+
+```{r}
+code_to_name <- function(code) {
+  (data %>% filter(cca2 == code))$name.common
+}
+code_to_name("CO")
+```
+
+
+```{r}
+co <- data %>% filter(cca2 == "CO")
+```
+
+```{r}
+reqs = co$requirements[[1]]
+```
+
+```{r}
+country <- reqs[1]
+country_code <- names(country)
+permission <- get(country_code, country)$permission
+
+country
+country_code
+permission
+```
+
+
+```{r}
+for (i in seq_along(reqs)){
+  print(reqs[i])
+}
+```
+
