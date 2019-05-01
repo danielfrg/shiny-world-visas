@@ -8,9 +8,9 @@ library(jsonlite)
 library(tidyverse)
 ```
 
-We have two data files one general countries.json and a bunch of *.visas.json.
+We have two data files one general `countries.json` and a bunch of `*.visas.json`.
 
-Process would be to 1. load the general one 2. load all the visas.json and join them.
+Process would be to load the general one and load all the visas.json and join them.
 
 ## countries.json
 
